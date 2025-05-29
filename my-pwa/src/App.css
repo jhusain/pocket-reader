@@ -1,0 +1,68 @@
+.App {
+  text-align: center;
+  font-family: sans-serif;
+}
+
+.App-header {
+  background-color: #007bff;
+  padding: 20px;
+  color: white;
+  margin-bottom: 20px;
+  position: relative; /* For positioning the back button */
+}
+
+.App-header h1 {
+  margin: 0;
+}
+
+.url-list {
+  padding: 0 10px;
+}
+
+.url-item {
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.url-item:hover {
+  background-color: #f0f0f0;
+}
+
+.content-view {
+  padding: 10px;
+  text-align: left;
+}
+
+.content-view button {
+  padding: 10px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 15px;
+}
+
+.content-view button:hover {
+  background-color: #0056b3;
+}
+
+/* Basic styling for simplified content if it's HTML */
+.content-view div {
+  border: 1px solid #ddd;
+  padding: 15px;
+  background-color: #fff;
+  border-radius: 5px;
+  overflow-wrap: break-word; /* Ensure long strings wrap */
+}
+
+/* Ensure images in simplified content are responsive */
+.content-view div img {
+  max-width: 100%;
+  height: auto;
+}
