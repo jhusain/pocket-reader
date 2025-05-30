@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/pocket-reader/static/css/main.3a00fea5.css",
+    "main.js": "/pocket-reader/static/js/main.0680d207.js",
+    "static/js/453.5c464b4e.chunk.js": "/pocket-reader/static/js/453.5c464b4e.chunk.js",
+    "index.html": "/pocket-reader/index.html",
+    "main.3a00fea5.css.map": "/pocket-reader/static/css/main.3a00fea5.css.map",
+    "main.0680d207.js.map": "/pocket-reader/static/js/main.0680d207.js.map",
+    "453.5c464b4e.chunk.js.map": "/pocket-reader/static/js/453.5c464b4e.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.3a00fea5.css",
+    "static/js/main.0680d207.js"
+  ]
+}
