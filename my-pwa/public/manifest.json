@@ -18,6 +18,16 @@
       "sizes": "512x512"
     }
   ],
+  "share_target": {
+    "action": "shared-url-handler/",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#007bff",
