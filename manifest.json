@@ -29,6 +29,7 @@
     }
   },
   "start_url": ".",
+  "scope": "/pocket-reader/",
   "display": "standalone",
   "theme_color": "#007bff",
   "background_color": "#ffffff"
