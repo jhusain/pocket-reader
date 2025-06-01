@@ -19,7 +19,7 @@
     }
   ],
   "share_target": {
-    "action": "shared-url-handler/",
+    "action": "shared-url-handler.html",
     "method": "GET",
     "enctype": "application/x-www-form-urlencoded",
     "params": {

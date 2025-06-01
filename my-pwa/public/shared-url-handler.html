@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Processing Shared URL</title>
+    <script>
+        (function() {
+            // Function to safely parse JSON from localStorage
+            function getUrlsFromLocalStorage() {
+                const storedUrlsRaw = localStorage.getItem('appUrls');
+                if (storedUrlsRaw) {
+                    try {
+                        const parsedUrls = JSON.parse(storedUrlsRaw);
+                        return Array.isArray(parsedUrls) ? parsedUrls : [];
+                    } catch (e) {
+                        console.error('Error parsing appUrls from localStorage:', e);
+                        return []; // Return empty array on error
+                    }
+                }
+                return [];
+            }
+
+            // Get search parameters
+            const params = new URLSearchParams(window.location.search);
+            const sharedUrl = params.get('url');
+            const sharedTitle = params.get('title') || ''; // Default to empty string if null
+            const sharedText = params.get('text') || '';   // Default to empty string if null
+
+            if (sharedUrl) {
+                const urls = getUrlsFromLocalStorage();
+                const newUrlEntry = {
+                    url: sharedUrl,
+                    title: sharedTitle || sharedUrl, // Use URL as title if title is empty
+                    text: sharedText, // Not typically stored directly in the list item, but available
+                    status: 'unloaded'
+                };
+
+                // Add to the beginning of the list
+                // Avoid adding duplicates if the URL already exists
+                const existingIndex = urls.findIndex(item => item.url === sharedUrl);
+                if (existingIndex > -1) {
+                    // Remove existing if found, to move it to the top
+                    urls.splice(existingIndex, 1);
+                }
+                urls.unshift(newUrlEntry);
+
+                try {
+                    localStorage.setItem('appUrls', JSON.stringify(urls));
+                } catch (e) {
+                    console.error('Error saving appUrls to localStorage:', e);
+                    // Optionally, inform the user or handle the error
+                }
+            }
+
+            // Redirect to the main app page.
+            // Assumes this HTML file is in the same directory as the main index.html
+            // when deployed under /pocket-reader/.
+            // So, './' or 'index.html' should resolve to /pocket-reader/index.html
+            window.location.replace('./index.html'); // Or just './' might work
+        })();
+    </script>
+</head>
+<body>
+    <p>Processing shared content...</p>
+    <p>If you are not redirected automatically, <a href="./index.html">click here to go to the main application</a>.</p>
+</body>
+</html>
