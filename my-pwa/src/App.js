@@ -5,6 +5,17 @@ import { defuddle } from 'defuddle'; // Assuming defuddle is an ES module or has
 import './App.css';
 import UrlList from './UrlList';
 import ContentView from './ContentView';
+
+// MUI Imports
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Container from '@mui/material/Container';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Optional icon
+
 // SharedUrlReceiver import removed
 
 // Configure localforage instance if needed
@@ -142,34 +153,48 @@ function App() {
 
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>URL Viewer PWA</h1>
-        {currentView === 'content' && <button onClick={handleBackToList} style={{position: 'absolute', top: '20px', right: '20px'}}>Back to List</button>}
-      </header>
-      <main>
-        {/* Optional: Input for adding new URLs */}
-        {currentView === 'list' && (
-          <div style={{ padding: '10px', display: 'flex' }}>
-            <input 
-              type="url" 
-              value={newUrlInput} 
-              onChange={(e) => setNewUrlInput(e.target.value)} 
-              placeholder="Enter URL to add"
-              style={{ flexGrow: 1, marginRight: '5px' }}
-            />
-            <button onClick={handleAddUrl}>Add URL</button>
-          </div>
-        )}
+    <div className="App"> {/* Outer div can remain for now, or be replaced by Box/Fragment if App.css is fully removed later */}
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            URL Viewer PWA
+          </Typography>
+          {currentView === 'content' && (
+            <Button color="inherit" onClick={handleBackToList} startIcon={<ArrowBackIcon />}>
+              Back to List
+            </Button>
+          )}
+        </Toolbar>
+      </AppBar>
+      <Container maxWidth="lg" sx={{ marginTop: 2, marginBottom: 2 }}>
+        <main>
+          {/* Optional: Input for adding new URLs */}
+          {currentView === 'list' && (
+            <Box sx={{ padding: '16px 0px', display: 'flex', alignItems: 'center', marginBottom: 2 }}>
+              <TextField
+                type="url"
+                label="Enter URL to add"
+                variant="outlined"
+                size="small"
+                value={newUrlInput}
+                onChange={(e) => setNewUrlInput(e.target.value)}
+                sx={{ flexGrow: 1, marginRight: 1 }}
+              />
+              <Button variant="contained" onClick={handleAddUrl}>
+                Add URL
+              </Button>
+            </Box>
+          )}
 
-        {currentView === 'list' && (
-          <UrlList urls={urls} onUrlClick={handleUrlClick} />
-        )}
-        {currentView === 'content' && (
-          <ContentView contentToShow={contentToShow} onBack={handleBackToList} />
-        )}
-        {/* SharedUrlReceiver rendering logic removed */}
-      </main>
+          {currentView === 'list' && (
+            <UrlList urls={urls} onUrlClick={handleUrlClick} />
+          )}
+          {currentView === 'content' && (
+            <ContentView contentToShow={contentToShow} onBack={handleBackToList} />
+          )}
+          {/* SharedUrlReceiver rendering logic removed */}
+        </main>
+      </Container>
     </div>
   );
 }

@@ -1,68 +1,98 @@
-.App {
-  text-align: center;
-  font-family: sans-serif;
-}
-
-.App-header {
-  background-color: #007bff;
-  padding: 20px;
-  color: white;
-  margin-bottom: 20px;
-  position: relative; /* For positioning the back button */
-}
-
-.App-header h1 {
-  margin: 0;
-}
-
-.url-list {
-  padding: 0 10px;
-}
-
-.url-item {
-  background-color: #f9f9f9;
-  border: 1px solid #eee;
-  padding: 15px;
-  margin-bottom: 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.url-item:hover {
-  background-color: #f0f0f0;
-}
-
-.content-view {
-  padding: 10px;
-  text-align: left;
-}
-
-.content-view button {
-  padding: 10px 15px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-bottom: 15px;
-}
-
-.content-view button:hover {
-  background-color: #0056b3;
-}
-
-/* Basic styling for simplified content if it's HTML */
-.content-view div {
-  border: 1px solid #ddd;
-  padding: 15px;
-  background-color: #fff;
-  border-radius: 5px;
+/* Styles for content rendered by dangerouslySetInnerHTML */
+/* These styles will apply if the Box in ContentView is given className="html-content-wrapper" */
+.html-content-wrapper {
+  /* Paper component will provide border/background/padding/border-radius */
   overflow-wrap: break-word; /* Ensure long strings wrap */
+  word-wrap: break-word; /* For older browsers */
+  line-height: 1.6; /* Example: improve readability */
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif; /* Align with MUI default */
+  color: #333; /* Example text color, can be inherited from theme */
 }
 
-/* Ensure images in simplified content are responsive */
-.content-view div img {
+.html-content-wrapper h1,
+.html-content-wrapper h2,
+.html-content-wrapper h3,
+.html-content-wrapper h4,
+.html-content-wrapper h5,
+.html-content-wrapper h6 {
+  margin-top: 1.2em;
+  margin-bottom: 0.6em;
+  font-weight: 500; /* Match MUI typography a bit closer */
+}
+
+.html-content-wrapper p {
+  margin-bottom: 0.8em;
+}
+
+.html-content-wrapper a {
+  color: #1976d2; /* Default MUI primary color */
+  text-decoration: none;
+}
+
+.html-content-wrapper a:hover {
+  text-decoration: underline;
+}
+
+.html-content-wrapper img {
   max-width: 100%;
   height: auto;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.html-content-wrapper pre {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 16px;
+  overflow-x: auto; /* Allow horizontal scrolling for code blocks */
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace; /* Match code font */
+  font-size: 0.9em;
+}
+
+.html-content-wrapper code {
+   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace; /* Match code font */
+   background-color: rgba(27,31,35,.05); /* Subtle background for inline code */
+   padding: .2em .4em;
+   margin: 0;
+   font-size: 85%;
+   border-radius: 3px;
+}
+
+.html-content-wrapper pre code {
+  background-color: transparent; /* No double background for code within pre */
+  padding: 0;
+  margin: 0;
+  font-size: inherit;
+  border-radius: 0;
+}
+
+.html-content-wrapper ul,
+.html-content-wrapper ol {
+  margin-bottom: 0.8em;
+  padding-left: 2em; /* Indent lists */
+}
+
+.html-content-wrapper li {
+  margin-bottom: 0.4em;
+}
+
+.html-content-wrapper blockquote {
+  border-left: 4px solid #ccc;
+  padding-left: 1em;
+  margin-left: 0;
+  font-style: italic;
+  color: #555;
+}
+
+/* Remove .App text-align: center if it exists and is not desired */
+/* The original .App was text-align:center, this is usually not wanted with MUI which handles layout. */
+/* If App.js still has <div className="App">, and App.css has .App { text-align: center; }, remove it or override. */
+/* For now, we assume the outer .App div in App.js might still exist but its CSS is largely superseded by MUI Container/Layout */
+/* If an .App rule remains in App.css, it should be minimal. */
+.App {
+  /* Any remaining App-wide styles that DON'T conflict with MUI. */
+  /* For example, if you had a global font-family here, it's now handled by MUI's theme + CssBaseline. */
+  /* If text-align: center was here, it's likely not needed or desired. */
 }
