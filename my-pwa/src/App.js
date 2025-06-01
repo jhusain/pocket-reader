@@ -5,7 +5,7 @@ import { defuddle } from 'defuddle'; // Assuming defuddle is an ES module or has
 import './App.css';
 import UrlList from './UrlList';
 import ContentView from './ContentView';
-import SharedUrlReceiver from './SharedUrlReceiver'; // Import the new component
+// SharedUrlReceiver import removed
 
 // Configure localforage instance if needed
 localforage.config({
@@ -16,37 +16,11 @@ localforage.config({
 
 function App() {
   const [urls, setUrls] = useState([]); // {url: string, title?: string, simplifiedHtml?: string, status: 'unloaded' | 'loading' | 'loaded' | 'error', errorMessage?: string}
-  const [currentView, setCurrentView] = useState('list'); // 'list' | 'content' | 'shared_content_view'
+  const [currentView, setCurrentView] = useState('list'); // 'list' | 'content'
   const [contentToShow, setContentToShow] = useState(''); // HTML string or error message
-  const [sharedData, setSharedData] = useState(null); // {title, text, url}
+  // sharedData state removed
 
-  // Effect for handling shared URL
-  useEffect(() => {
-    const publicUrl = process.env.PUBLIC_URL || '';
-    // Ensure sharePath has a trailing slash if your manifest action has it.
-    // The manifest action "shared-url-handler/" implies it will be a directory.
-    const sharePath = `${publicUrl}/shared-url-handler/`;
-
-    let currentPathname = window.location.pathname;
-    // Normalize currentPathname to ensure it also has a trailing slash if sharePath does
-    if (sharePath.endsWith('/') && !currentPathname.endsWith('/')) {
-      currentPathname += '/';
-    }
-
-    if (currentPathname === sharePath) {
-      const params = new URLSearchParams(window.location.search);
-      const url = params.get('url');
-      const title = params.get('title');
-      const text = params.get('text');
-
-      if (url) {
-        setSharedData({ url, title, text });
-        setCurrentView('shared_content_view');
-        // Optional: Clear search params from URL bar after processing
-        // window.history.replaceState({}, '', publicUrl || '/');
-      }
-    }
-  }, []); // Empty dependency array to run once on mount
+  // Effect for handling shared URL removed
 
   // Load URLs from localforage on initial render
   useEffect(() => {
@@ -152,15 +126,10 @@ function App() {
   const handleBackToList = () => {
     setCurrentView('list');
     setContentToShow('');
-    setSharedData(null); // Also clear shared data
+    // setSharedData(null) removed;
   };
 
-  const handleClearSharedView = () => {
-    setSharedData(null);
-    setCurrentView('list');
-    // Optional: Navigate to the base path if not already there
-    // window.history.pushState({}, '', process.env.PUBLIC_URL || '/');
-  };
+  // handleClearSharedView function removed
   
   // Simple input for adding new URLs - OPTIONAL but useful for testing
   const [newUrlInput, setNewUrlInput] = useState('');
@@ -199,9 +168,7 @@ function App() {
         {currentView === 'content' && (
           <ContentView contentToShow={contentToShow} onBack={handleBackToList} />
         )}
-        {currentView === 'shared_content_view' && sharedData && (
-          <SharedUrlReceiver data={sharedData} onClear={handleClearSharedView} />
-        )}
+        {/* SharedUrlReceiver rendering logic removed */}
       </main>
     </div>
   );
