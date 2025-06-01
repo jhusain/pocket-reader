@@ -25,8 +25,8 @@ function App() {
     const publicUrl = process.env.PUBLIC_URL || '';
     // Ensure sharePath has a trailing slash if your manifest action has it.
     // The manifest action "shared-url-handler/" implies it will be a directory.
-    const sharePath = `${publicUrl}/shared-url-handler/`; 
-    
+    const sharePath = `${publicUrl}/shared-url-handler/`;
+
     let currentPathname = window.location.pathname;
     // Normalize currentPathname to ensure it also has a trailing slash if sharePath does
     if (sharePath.endsWith('/') && !currentPathname.endsWith('/')) {
@@ -43,7 +43,7 @@ function App() {
         setSharedData({ url, title, text });
         setCurrentView('shared_content_view');
         // Optional: Clear search params from URL bar after processing
-        // window.history.replaceState({}, '', publicUrl || '/'); 
+        // window.history.replaceState({}, '', publicUrl || '/');
       }
     }
   }, []); // Empty dependency array to run once on mount

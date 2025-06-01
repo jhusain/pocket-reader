@@ -20,16 +20,16 @@ function SharedUrlReceiver({ data, onClear }) {
         </p>
       )}
       {!data.url && <p><em>No URL was shared.</em></p>}
-      <button 
-        onClick={onClear} 
-        style={{ 
-          marginTop: '15px', 
-          padding: '10px 15px', 
-          backgroundColor: '#007bff', 
-          color: 'white', 
-          border: 'none', 
-          borderRadius: '4px', 
-          cursor: 'pointer' 
+      <button
+        onClick={onClear}
+        style={{
+          marginTop: '15px',
+          padding: '10px 15px',
+          backgroundColor: '#007bff',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer'
         }}
       >
         Clear Shared Content & View List
