@@ -1,6 +1,6 @@
 const DB_NAME = 'UrlViewerPWA';
 const STORE_NAME = 'urls';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 /**
  * Initializes the IndexedDB database and creates the object store if it doesn't exist.
@@ -67,7 +67,7 @@ export async function saveUrls(urls) {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([STORE_NAME], 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
-
+    
     // Clear existing data
     const clearRequest = store.clear();
     clearRequest.onerror = (event) => {
@@ -102,7 +102,7 @@ export async function saveUrls(urls) {
                         console.error('Error saving URL to IndexedDB:', urlObject, event.target.error);
                         // Don't reject immediately, try to save other URLs or let transaction error handle it.
                         // However, it's better to abort if one fails to ensure data consistency.
-                        transaction.abort();
+                        transaction.abort(); 
                         reject(event.target.error);
                     };
                 } catch (e) {
@@ -113,7 +113,7 @@ export async function saveUrls(urls) {
             } else {
                 console.warn('Skipping invalid URL object during save:', urlObject);
                 // If we need to count this as "processed" for the putCount logic:
-                // putCount++;
+                // putCount++; 
                 // if (putCount === urls.length) resolve();
                 // Or, if strictness is required:
                 transaction.abort();
@@ -132,7 +132,7 @@ export async function saveUrls(urls) {
       console.error('Error in save transaction:', event.target.error);
       reject(event.target.error);
     };
-
+    
     transaction.onabort = (event) => {
         console.error('Save transaction aborted:', event.target.error);
         // Reject if not already rejected by a specific put/clear error

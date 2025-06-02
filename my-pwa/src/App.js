@@ -67,7 +67,7 @@ function App() {
   useEffect(() => {
     // Only save if urls is not the initial empty array before loading
     // or if it's been populated with defaults that now need saving.
-    if (urls.length > 0) {
+    if (urls.length > 0) { 
       saveUrls(urls).catch(error => {
           console.error('Failed to save URLs to IndexedDB:', error);
       });
