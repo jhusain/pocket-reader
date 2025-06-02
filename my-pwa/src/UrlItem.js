@@ -58,8 +58,15 @@ const UrlItem = ({ urlObject, onUrlClick, onDeleteUrl }) => {
 
 
   return (
-    <ListItem component="li" divider disableGutters>
-      <ListItemButton onClick={handleClick} sx={{ flexGrow: 1 }}> {/* Allow ListItemButton to take available space */}
+    <ListItem component="li" divider disableGutters sx={{ position: 'relative' }}>
+      <ListItemButton 
+        onClick={handleClick} 
+        // sx={{ flexGrow: 1 }} // flexGrow might not be needed if pr is set correctly
+        sx={{ 
+          pr: 9, // Padding right for the secondary action
+          // flexGrow: 1, // Optional: see if needed with padding
+        }}
+      >
         {(urlObject.status === 'loading' || urlObject.status === 'error') && (
           <ListItemIcon sx={{minWidth: '40px'}}> {/* Adjust minWidth if icons look too spaced out */}
             {urlObject.status === 'loading' && <CircularProgress size={24} />}
