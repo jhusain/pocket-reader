@@ -11,7 +11,7 @@
     // --- Start of Embedded IndexedDB Utilities ---
     const IDB_DB_NAME = 'UrlViewerPWA';
     const IDB_STORE_NAME = 'urls';
-    const IDB_DB_VERSION = 1;
+    const IDB_DB_VERSION = 2;
 
     function initDBGlobal() { // Renamed to avoid conflict if other scripts use initDB
       return new Promise((resolve, reject) => {
@@ -53,7 +53,7 @@
         const transaction = db.transaction([IDB_STORE_NAME], 'readwrite');
         const store = transaction.objectStore(IDB_STORE_NAME);
         const clearRequest = store.clear();
-
+        
         clearRequest.onerror = (event) => {
             console.error('Error clearing object store (shared-handler):', event.target.error);
             transaction.abort();
@@ -86,7 +86,7 @@
                     console.warn('Skipping invalid URL object during save (shared-handler):', urlObject);
                     transaction.abort(); // Abort if an invalid object is encountered
                     reject(new Error('Invalid URL object encountered during save (shared-handler).'));
-                    return;
+                    return; 
                 }
             });
         };
@@ -127,7 +127,7 @@
             }
 
             logDebug('DOM fully loaded and parsed. Script started (using IndexedDB).');
-
+            
             // localforage related checks and config removed.
 
             const params = new URLSearchParams(window.location.search);
