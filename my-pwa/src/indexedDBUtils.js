@@ -1,6 +1,6 @@
 const DB_NAME = 'UrlViewerPWA';
 const STORE_NAME = 'urls';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 /**
  * Initializes the IndexedDB database and creates the object store if it doesn't exist.
@@ -12,10 +12,13 @@ export function initDB() {
 
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'url' });
-        // console.log(`Object store "${STORE_NAME}" created.`);
+      // If the store already exists from a previous version, delete it to ensure clean schema application
+      if (db.objectStoreNames.contains(STORE_NAME)) {
+        db.deleteObjectStore(STORE_NAME);
+        // console.log(`Object store "${STORE_NAME}" deleted during upgrade.`);
       }
+      db.createObjectStore(STORE_NAME, { keyPath: 'url' });
+      // console.log(`Object store "${STORE_NAME}" created with keyPath 'url'.`);
     };
 
     request.onsuccess = (event) => {
