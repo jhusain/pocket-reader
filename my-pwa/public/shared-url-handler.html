@@ -3,65 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <title>Processing Shared URL</title>
+    <style>
+        #debug-log p { margin: 0.2em 0; } /* Basic styling for log messages */
+    </style>
     <script>
         (function() {
+            function logDebug(message) {
+                const logContainer = document.getElementById('debug-log');
+                if (logContainer) {
+                    const p = document.createElement('p');
+                    // For objects/arrays, stringify, otherwise use String()
+                    if (typeof message === 'object' && message !== null) {
+                        p.textContent = JSON.stringify(message);
+                    } else {
+                        p.textContent = String(message);
+                    }
+                    logContainer.appendChild(p);
+                }
+                // Also log to console for environments where it's available
+                console.log(message);
+            }
+
+            logDebug('Script started.');
+
             // Function to safely parse JSON from localStorage
             function getUrlsFromLocalStorage() {
+                logDebug('Attempting to get appUrls from localStorage.');
                 const storedUrlsRaw = localStorage.getItem('appUrls');
+                logDebug('Raw appUrls from localStorage: ' + (storedUrlsRaw === null ? 'null' : storedUrlsRaw));
+                let parsedUrls = [];
                 if (storedUrlsRaw) {
                     try {
-                        const parsedUrls = JSON.parse(storedUrlsRaw);
-                        return Array.isArray(parsedUrls) ? parsedUrls : [];
+                        parsedUrls = JSON.parse(storedUrlsRaw);
+                        if (!Array.isArray(parsedUrls)) {
+                           logDebug('Parsed appUrls is not an array, defaulting to empty array.');
+                           parsedUrls = [];
+                        }
                     } catch (e) {
-                        console.error('Error parsing appUrls from localStorage:', e);
-                        return []; // Return empty array on error
+                        console.error('Error parsing appUrls from localStorage:', e); // Keep console.error for critical errors
+                        logDebug('Error parsing appUrls: ' + e.toString());
+                        parsedUrls = []; // Return empty array on error
                     }
                 }
-                return [];
+                logDebug('Parsed URLs from localStorage: ' + JSON.stringify(parsedUrls));
+                return parsedUrls;
             }
 
             // Get search parameters
             const params = new URLSearchParams(window.location.search);
+            logDebug('URL Search Params: ' + params.toString());
+
             const sharedUrl = params.get('url');
             const sharedTitle = params.get('title') || ''; // Default to empty string if null
             const sharedText = params.get('text') || '';   // Default to empty string if null
 
+            logDebug('Shared URL: ' + (sharedUrl === null ? 'null' : sharedUrl));
+            logDebug('Shared Title: ' + sharedTitle);
+            logDebug('Shared Text: ' + sharedText);
+
             if (sharedUrl) {
+                logDebug('sharedUrl is present. Proceeding to process.');
                 const urls = getUrlsFromLocalStorage();
+                logDebug('Current URLs from storage (before modification): ' + JSON.stringify(urls));
+
                 const newUrlEntry = {
                     url: sharedUrl,
                     title: sharedTitle || sharedUrl, // Use URL as title if title is empty
-                    text: sharedText, // Not typically stored directly in the list item, but available
+                    text: sharedText,
                     status: 'unloaded'
                 };
+                logDebug('New URL entry to add: ' + JSON.stringify(newUrlEntry));
 
-                // Add to the beginning of the list
-                // Avoid adding duplicates if the URL already exists
                 const existingIndex = urls.findIndex(item => item.url === sharedUrl);
                 if (existingIndex > -1) {
-                    // Remove existing if found, to move it to the top
+                    logDebug('URL already exists at index ' + existingIndex + '. Removing old entry to move to top.');
                     urls.splice(existingIndex, 1);
                 }
                 urls.unshift(newUrlEntry);
+                logDebug('URLs after adding new entry (before saving): ' + JSON.stringify(urls));
 
                 try {
+                    logDebug('Attempting to save updated appUrls to localStorage.');
                     localStorage.setItem('appUrls', JSON.stringify(urls));
+                    logDebug('Successfully saved updated appUrls.');
                 } catch (e) {
-                    console.error('Error saving appUrls to localStorage:', e);
-                    // Optionally, inform the user or handle the error
+                    console.error('Error saving appUrls to localStorage:', e); // Keep console.error
+                    logDebug('Error saving appUrls: ' + e.toString());
                 }
+            } else {
+                logDebug('No sharedUrl parameter found in the URL.');
             }
 
-            // Redirect to the main app page.
-            // Assumes this HTML file is in the same directory as the main index.html
-            // when deployed under /pocket-reader/.
-            // So, './' or 'index.html' should resolve to /pocket-reader/index.html
-            window.location.replace('./index.html'); // Or just './' might work
+            logDebug('Redirecting to ./index.html in 30 seconds...');
+            setTimeout(function() {
+                logDebug('Executing redirect now.');
+                window.location.replace('./index.html');
+            }, 30000); // 30 seconds
         })();
     </script>
 </head>
 <body>
-    <p>Processing shared content...</p>
-    <p>If you are not redirected automatically, <a href="./index.html">click here to go to the main application</a>.</p>
+    <div id="debug-log" style="padding: 10px; border: 1px solid #ccc; margin-bottom: 10px; background-color: #f9f9f9; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto;">
+        <h3>Debug Log:</h3>
+    </div>
+    <p>Processing shared content... You will be redirected shortly.</p>
+    <p>If you are not redirected automatically after 30 seconds, <a href="./index.html">click here to go to the main application</a>.</p>
 </body>
 </html>
