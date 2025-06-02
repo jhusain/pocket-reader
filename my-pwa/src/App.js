@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import localforage from 'localforage';
+// import localforage from 'localforage'; // Removed
+import { initDB, getAllUrls, saveUrls } from './indexedDBUtils'; // Added
 import { defuddle } from 'defuddle'; // Assuming defuddle is an ES module or has type definitions
 
 import './App.css';
@@ -18,12 +19,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Optional icon
 
 // SharedUrlReceiver import removed
 
-// Configure localforage instance if needed
-localforage.config({
-  name: 'UrlViewerPWA',
-  storeName: 'urls',
-  description: 'Storage for URL data',
-});
+// localforage.config block removed
 
 function App() {
   const [urls, setUrls] = useState([]); // {url: string, title?: string, simplifiedHtml?: string, status: 'unloaded' | 'loading' | 'loaded' | 'error', errorMessage?: string}
@@ -33,12 +29,17 @@ function App() {
 
   // Effect for handling shared URL removed
 
-  // Load URLs from localforage on initial render
+  // Initialize DB on component mount
+  useEffect(() => {
+    initDB().catch(err => console.error("App.js: Failed to initialize DB on mount:", err));
+  }, []);
+
+  // Load URLs from IndexedDB on initial render
   useEffect(() => {
     const loadUrls = async () => {
       try {
-        const storedUrls = await localforage.getItem('appUrls');
-        if (storedUrls && Array.isArray(storedUrls)) {
+        const storedUrls = await getAllUrls();
+        if (storedUrls && Array.isArray(storedUrls) && storedUrls.length > 0) {
           setUrls(storedUrls);
         } else {
           // For testing, add some default URLs if none are stored
@@ -47,10 +48,10 @@ function App() {
             { url: 'https://www.wikipedia.org', status: 'unloaded' },
           ];
           setUrls(defaultUrls);
-          await localforage.setItem('appUrls', defaultUrls);
+          // saveUrls will be called by the next useEffect if urls state changes
         }
       } catch (error) {
-        console.error('Failed to load URLs from localforage:', error);
+        console.error('Failed to load URLs from IndexedDB:', error);
         // Initialize with default if error
          const defaultUrls = [
             { url: 'https://www.google.com', status: 'unloaded' },
@@ -60,14 +61,16 @@ function App() {
       }
     };
     loadUrls();
-  }, []);
+  }, []); // Empty dependency array means this runs once on mount
 
-  // Save URLs to localforage whenever they change
+  // Save URLs to IndexedDB whenever they change
   useEffect(() => {
-    if (urls.length > 0) { // Avoid saving empty initial array if not loaded yet
-        localforage.setItem('appUrls', urls).catch(error => {
-            console.error('Failed to save URLs to localforage:', error);
-        });
+    // Only save if urls is not the initial empty array before loading
+    // or if it's been populated with defaults that now need saving.
+    if (urls.length > 0) {
+      saveUrls(urls).catch(error => {
+          console.error('Failed to save URLs to IndexedDB:', error);
+      });
     }
   }, [urls]);
 
