@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/pocket-reader/static/css/main.3a00fea5.css",
-    "main.js": "/pocket-reader/static/js/main.fe6dc975.js",
-    "static/js/453.5c464b4e.chunk.js": "/pocket-reader/static/js/453.5c464b4e.chunk.js",
+    "main.css": "/pocket-reader/static/css/main.5da09d40.css",
+    "main.js": "/pocket-reader/static/js/main.73b2e5ad.js",
+    "static/js/453.743563ca.chunk.js": "/pocket-reader/static/js/453.743563ca.chunk.js",
     "index.html": "/pocket-reader/index.html",
-    "main.3a00fea5.css.map": "/pocket-reader/static/css/main.3a00fea5.css.map",
-    "main.fe6dc975.js.map": "/pocket-reader/static/js/main.fe6dc975.js.map",
-    "453.5c464b4e.chunk.js.map": "/pocket-reader/static/js/453.5c464b4e.chunk.js.map"
+    "main.5da09d40.css.map": "/pocket-reader/static/css/main.5da09d40.css.map",
+    "main.73b2e5ad.js.map": "/pocket-reader/static/js/main.73b2e5ad.js.map",
+    "453.743563ca.chunk.js.map": "/pocket-reader/static/js/453.743563ca.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.3a00fea5.css",
-    "static/js/main.fe6dc975.js"
+    "static/css/main.5da09d40.css",
+    "static/js/main.73b2e5ad.js"
   ]
 }
