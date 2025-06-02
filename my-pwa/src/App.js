@@ -78,7 +78,11 @@ function App() {
     setUrls(prevUrls =>
       prevUrls.map(u => (u.url === targetUrl ? { ...u, ...newData } : u))
     );
-  }, []);
+  }, [setUrls]);
+
+  const handleDeleteUrl = useCallback((urlToDelete) => {
+    setUrls(prevUrls => prevUrls.filter(u => u.url !== urlToDelete));
+  }, [setUrls]);
 
   const handleUrlClick = useCallback(async (urlObject) => {
     if (urlObject.status === 'loaded' && urlObject.simplifiedHtml) {
@@ -135,7 +139,7 @@ function App() {
         // setCurrentView('content'); // Already in content view
       }
     }
-  }, [updateUrlData]);
+  }, [updateUrlData, setUrls]); // Added setUrls here just in case, though updateUrlData is the direct dependency
 
   const handleBackToList = () => {
     setCurrentView('list');
@@ -190,7 +194,7 @@ function App() {
           )}
 
           {currentView === 'list' && (
-            <UrlList urls={urls} onUrlClick={handleUrlClick} />
+            <UrlList urls={urls} onUrlClick={handleUrlClick} onDeleteUrl={handleDeleteUrl} />
           )}
           {currentView === 'content' && (
             <ContentView contentToShow={contentToShow} onBack={handleBackToList} />
