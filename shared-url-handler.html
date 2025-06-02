@@ -7,99 +7,103 @@
         #debug-log p { margin: 0.2em 0; } /* Basic styling for log messages */
     </style>
     <script>
-        (function() {
-            function logDebug(message) {
-                const logContainer = document.getElementById('debug-log');
-                if (logContainer) {
-                    const p = document.createElement('p');
-                    // For objects/arrays, stringify, otherwise use String()
-                    if (typeof message === 'object' && message !== null) {
-                        p.textContent = JSON.stringify(message);
-                    } else {
-                        p.textContent = String(message);
-                    }
-                    logContainer.appendChild(p);
-                }
-                // Also log to console for environments where it's available
-                console.log(message);
-            }
-
-            logDebug('Script started.');
-
-            // Function to safely parse JSON from localStorage
-            function getUrlsFromLocalStorage() {
-                logDebug('Attempting to get appUrls from localStorage.');
-                const storedUrlsRaw = localStorage.getItem('appUrls');
-                logDebug('Raw appUrls from localStorage: ' + (storedUrlsRaw === null ? 'null' : storedUrlsRaw));
-                let parsedUrls = [];
-                if (storedUrlsRaw) {
-                    try {
-                        parsedUrls = JSON.parse(storedUrlsRaw);
-                        if (!Array.isArray(parsedUrls)) {
-                           logDebug('Parsed appUrls is not an array, defaulting to empty array.');
-                           parsedUrls = [];
+        document.addEventListener('DOMContentLoaded', function() {
+            (function() { // IIFE kept for scope isolation
+                function logDebug(message) {
+                    const logContainer = document.getElementById('debug-log');
+                    if (logContainer) {
+                        const p = document.createElement('p');
+                        if (typeof message === 'object' && message !== null) {
+                            try {
+                                p.textContent = JSON.stringify(message);
+                            } catch (e) {
+                                p.textContent = "Error stringifying object for debug log";
+                                console.error("Error stringifying object for debug log:", message, e);
+                            }
+                        } else {
+                            p.textContent = String(message);
                         }
-                    } catch (e) {
-                        console.error('Error parsing appUrls from localStorage:', e); // Keep console.error for critical errors
-                        logDebug('Error parsing appUrls: ' + e.toString());
-                        parsedUrls = []; // Return empty array on error
+                        logContainer.appendChild(p);
                     }
+                    console.log(message);
                 }
-                logDebug('Parsed URLs from localStorage: ' + JSON.stringify(parsedUrls));
-                return parsedUrls;
-            }
 
-            // Get search parameters
-            const params = new URLSearchParams(window.location.search);
-            logDebug('URL Search Params: ' + params.toString());
+                logDebug('DOM fully loaded and parsed. Script started.');
 
-            const sharedUrl = params.get('url');
-            const sharedTitle = params.get('title') || ''; // Default to empty string if null
-            const sharedText = params.get('text') || '';   // Default to empty string if null
-
-            logDebug('Shared URL: ' + (sharedUrl === null ? 'null' : sharedUrl));
-            logDebug('Shared Title: ' + sharedTitle);
-            logDebug('Shared Text: ' + sharedText);
-
-            if (sharedUrl) {
-                logDebug('sharedUrl is present. Proceeding to process.');
-                const urls = getUrlsFromLocalStorage();
-                logDebug('Current URLs from storage (before modification): ' + JSON.stringify(urls));
-
-                const newUrlEntry = {
-                    url: sharedUrl,
-                    title: sharedTitle || sharedUrl, // Use URL as title if title is empty
-                    text: sharedText,
-                    status: 'unloaded'
-                };
-                logDebug('New URL entry to add: ' + JSON.stringify(newUrlEntry));
-
-                const existingIndex = urls.findIndex(item => item.url === sharedUrl);
-                if (existingIndex > -1) {
-                    logDebug('URL already exists at index ' + existingIndex + '. Removing old entry to move to top.');
-                    urls.splice(existingIndex, 1);
+                // Function to safely parse JSON from localStorage
+                function getUrlsFromLocalStorage() {
+                    logDebug('Attempting to get appUrls from localStorage.');
+                    const storedUrlsRaw = localStorage.getItem('appUrls');
+                    logDebug('Raw appUrls from localStorage: ' + (storedUrlsRaw === null ? 'null' : storedUrlsRaw));
+                    let parsedUrls = [];
+                    if (storedUrlsRaw) {
+                        try {
+                            parsedUrls = JSON.parse(storedUrlsRaw);
+                            if (!Array.isArray(parsedUrls)) {
+                               logDebug('Parsed appUrls is not an array, defaulting to empty array.');
+                               parsedUrls = [];
+                            }
+                        } catch (e) {
+                            console.error('Error parsing appUrls from localStorage:', e);
+                            logDebug('Error parsing appUrls: ' + e.toString());
+                            parsedUrls = [];
+                        }
+                    }
+                    logDebug('Parsed URLs from localStorage (from getUrlsFromLocalStorage): ' + JSON.stringify(parsedUrls));
+                    return parsedUrls;
                 }
-                urls.unshift(newUrlEntry);
-                logDebug('URLs after adding new entry (before saving): ' + JSON.stringify(urls));
 
-                try {
-                    logDebug('Attempting to save updated appUrls to localStorage.');
-                    localStorage.setItem('appUrls', JSON.stringify(urls));
-                    logDebug('Successfully saved updated appUrls.');
-                } catch (e) {
-                    console.error('Error saving appUrls to localStorage:', e); // Keep console.error
-                    logDebug('Error saving appUrls: ' + e.toString());
+                const params = new URLSearchParams(window.location.search);
+                logDebug('URL Search Params: ' + params.toString());
+
+                const sharedUrl = params.get('url');
+                const sharedTitle = params.get('title') || '';
+                const sharedText = params.get('text') || '';
+
+                logDebug('Shared URL: ' + (sharedUrl === null ? 'null' : sharedUrl));
+                logDebug('Shared Title: ' + sharedTitle);
+                logDebug('Shared Text: ' + sharedText);
+
+                if (sharedUrl) {
+                    logDebug('sharedUrl is present. Proceeding to process.');
+                    const urls = getUrlsFromLocalStorage();
+                    logDebug('Current URLs from storage (before modification, inside if(sharedUrl)): ' + JSON.stringify(urls));
+
+                    const newUrlEntry = {
+                        url: sharedUrl,
+                        title: sharedTitle || sharedUrl,
+                        text: sharedText,
+                        status: 'unloaded'
+                    };
+                    logDebug('New URL entry to add: ' + JSON.stringify(newUrlEntry));
+
+                    const existingIndex = urls.findIndex(item => item.url === sharedUrl);
+                    if (existingIndex > -1) {
+                        logDebug('URL already exists at index ' + existingIndex + '. Removing old entry to move to top.');
+                        urls.splice(existingIndex, 1);
+                    }
+                    urls.unshift(newUrlEntry);
+                    logDebug('URLs after adding new entry (before saving): ' + JSON.stringify(urls));
+
+                    try {
+                        logDebug('Attempting to save updated appUrls to localStorage.');
+                        localStorage.setItem('appUrls', JSON.stringify(urls));
+                        logDebug('Successfully saved updated appUrls.');
+                    } catch (e) {
+                        console.error('Error saving appUrls to localStorage:', e);
+                        logDebug('Error saving appUrls: ' + e.toString());
+                    }
+                } else {
+                    logDebug('No sharedUrl parameter found in the URL.');
                 }
-            } else {
-                logDebug('No sharedUrl parameter found in the URL.');
-            }
 
-            logDebug('Redirecting to ./index.html in 30 seconds...');
-            setTimeout(function() {
-                logDebug('Executing redirect now.');
-                window.location.replace('./index.html');
-            }, 30000); // 30 seconds
-        })();
+                logDebug('Redirecting to ./index.html in 30 seconds...');
+                setTimeout(function() {
+                    logDebug('Executing redirect now.');
+                    window.location.replace('./index.html');
+                }, 30000); // 30 seconds
+            })(); // End of IIFE
+        }); // End of DOMContentLoaded listener
     </script>
 </head>
 <body>
