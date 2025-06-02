@@ -6,6 +6,7 @@
     <style>
         #debug-log p { margin: 0.2em 0; } /* Basic styling for log messages */
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             (function() { // IIFE kept for scope isolation
@@ -30,27 +31,27 @@
 
                 logDebug('DOM fully loaded and parsed. Script started.');
 
-                // Function to safely parse JSON from localStorage
-                function getUrlsFromLocalStorage() {
-                    logDebug('Attempting to get appUrls from localStorage.');
-                    const storedUrlsRaw = localStorage.getItem('appUrls');
-                    logDebug('Raw appUrls from localStorage: ' + (storedUrlsRaw === null ? 'null' : storedUrlsRaw));
-                    let parsedUrls = [];
-                    if (storedUrlsRaw) {
-                        try {
-                            parsedUrls = JSON.parse(storedUrlsRaw);
-                            if (!Array.isArray(parsedUrls)) {
-                               logDebug('Parsed appUrls is not an array, defaulting to empty array.');
-                               parsedUrls = [];
-                            }
-                        } catch (e) {
-                            console.error('Error parsing appUrls from localStorage:', e);
-                            logDebug('Error parsing appUrls: ' + e.toString());
-                            parsedUrls = [];
-                        }
-                    }
-                    logDebug('Parsed URLs from localStorage (from getUrlsFromLocalStorage): ' + JSON.stringify(parsedUrls));
-                    return parsedUrls;
+                if (typeof localforage === 'undefined') {
+                    logDebug('ERROR: localforage is not loaded! Check CDN link or network.');
+                    // Attempt to redirect anyway, or show a more prominent error.
+                    setTimeout(function() {
+                        logDebug('Executing redirect now (localforage not loaded).');
+                        window.location.replace('./index.html');
+                    }, 5000); // Shorter delay if core functionality is missing
+                    return; // Stop further execution
+                }
+
+                logDebug('Configuring localforage...');
+                try {
+                    localforage.config({
+                        name: 'UrlViewerPWA',
+                        storeName: 'urls', // This MUST match the storeName in the main app
+                        description: 'Storage for URL data (from share handler)',
+                    });
+                    logDebug('localforage configured successfully.');
+                } catch (e) {
+                    logDebug('Error configuring localforage: ' + e.toString());
+                    // Proceeding, but localforage operations might fail or use defaults
                 }
 
                 const params = new URLSearchParams(window.location.search);
@@ -64,44 +65,59 @@
                 logDebug('Shared Title: ' + sharedTitle);
                 logDebug('Shared Text: ' + sharedText);
 
-                if (sharedUrl) {
-                    logDebug('sharedUrl is present. Proceeding to process.');
-                    const urls = getUrlsFromLocalStorage();
-                    logDebug('Current URLs from storage (before modification, inside if(sharedUrl)): ' + JSON.stringify(urls));
-
-                    const newUrlEntry = {
-                        url: sharedUrl,
-                        title: sharedTitle || sharedUrl,
-                        text: sharedText,
-                        status: 'unloaded'
-                    };
-                    logDebug('New URL entry to add: ' + JSON.stringify(newUrlEntry));
-
-                    const existingIndex = urls.findIndex(item => item.url === sharedUrl);
-                    if (existingIndex > -1) {
-                        logDebug('URL already exists at index ' + existingIndex + '. Removing old entry to move to top.');
-                        urls.splice(existingIndex, 1);
-                    }
-                    urls.unshift(newUrlEntry);
-                    logDebug('URLs after adding new entry (before saving): ' + JSON.stringify(urls));
-
-                    try {
-                        logDebug('Attempting to save updated appUrls to localStorage.');
-                        localStorage.setItem('appUrls', JSON.stringify(urls));
-                        logDebug('Successfully saved updated appUrls.');
-                    } catch (e) {
-                        console.error('Error saving appUrls to localStorage:', e);
-                        logDebug('Error saving appUrls: ' + e.toString());
-                    }
-                } else {
-                    logDebug('No sharedUrl parameter found in the URL.');
+                // Define redirect function to avoid repetition
+                function scheduleRedirect(timeout = 30000, reason = "") {
+                    const reasonMsg = reason ? ` (${reason})` : "";
+                    logDebug(`Redirecting to ./index.html in ${timeout/1000} seconds${reasonMsg}...`);
+                    setTimeout(function() {
+                        logDebug(`Executing redirect now${reasonMsg}.`);
+                        window.location.replace('./index.html');
+                    }, timeout);
                 }
 
-                logDebug('Redirecting to ./index.html in 30 seconds...');
-                setTimeout(function() {
-                    logDebug('Executing redirect now.');
-                    window.location.replace('./index.html');
-                }, 30000); // 30 seconds
+                if (sharedUrl) {
+                    logDebug('sharedUrl is present. Proceeding to process with localforage.');
+
+                    localforage.getItem('appUrls').then(function(storedUrls) {
+                        logDebug('Data retrieved from localforage for appUrls: ' + JSON.stringify(storedUrls));
+                        let urls = [];
+                        if (storedUrls && Array.isArray(storedUrls)) {
+                            urls = storedUrls;
+                        } else {
+                            logDebug('No valid array found for appUrls in localforage, starting with empty array.');
+                        }
+                        logDebug('Current URLs from localforage (before modification): ' + JSON.stringify(urls));
+
+                        const newUrlEntry = {
+                            url: sharedUrl,
+                            title: sharedTitle || sharedUrl,
+                            text: sharedText,
+                            status: 'unloaded'
+                        };
+                        logDebug('New URL entry to add: ' + JSON.stringify(newUrlEntry));
+
+                        const existingIndex = urls.findIndex(item => item.url === sharedUrl);
+                        if (existingIndex > -1) {
+                            logDebug('URL already exists at index ' + existingIndex + '. Removing old entry to move to top.');
+                            urls.splice(existingIndex, 1);
+                        }
+                        urls.unshift(newUrlEntry);
+                        logDebug('URLs after adding new entry (before saving to localforage): ' + JSON.stringify(urls));
+
+                        return localforage.setItem('appUrls', urls); // Return the promise
+                    }).then(function(savedValue) {
+                        logDebug('Successfully saved updated appUrls to localforage. Saved value (potentially truncated by localforage driver): ' + JSON.stringify(savedValue).substring(0, 200) + '...');
+                        scheduleRedirect(30000, "save successful");
+                    }).catch(function(err) {
+                        logDebug('Error with localforage operations (getItem or setItem): ' + err.toString());
+                        console.error('Localforage error:', err);
+                        scheduleRedirect(30000, "storage error");
+                    });
+
+                } else {
+                    logDebug('No sharedUrl parameter found in the URL.');
+                    scheduleRedirect(30000, "no sharedUrl");
+                }
             })(); // End of IIFE
         }); // End of DOMContentLoaded listener
     </script>
@@ -111,6 +127,6 @@
         <h3>Debug Log:</h3>
     </div>
     <p>Processing shared content... You will be redirected shortly.</p>
-    <p>If you are not redirected automatically after 30 seconds, <a href="./index.html">click here to go to the main application</a>.</p>
+    <p>If you are not redirected automatically, <a href="./index.html">click here to go to the main application</a>.</p>
 </body>
 </html>
