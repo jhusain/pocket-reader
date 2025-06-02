@@ -37,13 +37,14 @@ describe('App component', () => {
     });
 
     // --- Test Deletion ---
-    // Find the list item for the first URL (Page 1)
-    // It's an <li> rendered by ListItemButton, but MUI gives it role="button".
-    const listItemPage1 = screen.getByRole('button', { name: new RegExp(initialUrls[0].title, 'i') });
-    expect(listItemPage1).toBeInTheDocument();
+    // 1. Find the ListItemButton (which has role="button" and the name we know)
+    const listItemButton = screen.getByRole('button', { name: new RegExp(initialUrls[0].title, 'i') });
 
+    // 2. Find its parent <li> element. This is the actual listitem container.
+    const listItemPage1 = listItemButton.closest('li');
+    expect(listItemPage1).toBeInTheDocument(); // Make sure we found the parent li
 
-    // Find the delete button within that list item
+    // 3. Find the delete button within this parent <li>
     const deleteButtonPage1 = within(listItemPage1).getByRole('button', { name: /delete url/i });
     fireEvent.click(deleteButtonPage1);
 
