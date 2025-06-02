@@ -203,6 +203,8 @@ async function handleSharedUrl(sharedUrl, sharedTitle, sharedText) {
 
 // It's good practice to also handle potential errors from initDB itself,
 // though the individual functions already await it.
-initDB().catch(error => {
-  console.error("Failed to initialize IndexedDB on module load:", error);
-});
+if (process.env.NODE_ENV !== 'test') {
+  initDB().catch(error => {
+    console.error("Failed to initialize IndexedDB on module load:", error);
+  });
+}

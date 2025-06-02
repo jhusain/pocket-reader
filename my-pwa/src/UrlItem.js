@@ -5,9 +5,12 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import IconButton from '@mui/material/IconButton';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
 // import LinkIcon from '@mui/icons-material/Link'; // Example, if needed for 'loaded' state
 
-const UrlItem = ({ urlObject, onUrlClick }) => {
+const UrlItem = ({ urlObject, onUrlClick, onDeleteUrl }) => {
   const handleClick = () => {
     onUrlClick(urlObject);
   };
@@ -54,7 +57,7 @@ const UrlItem = ({ urlObject, onUrlClick }) => {
 
 
   return (
-    <ListItemButton onClick={handleClick} divider>
+    <ListItemButton component="li" onClick={handleClick} divider>
       {(urlObject.status === 'loading' || urlObject.status === 'error') && (
         <ListItemIcon sx={{minWidth: '40px'}}> {/* Adjust minWidth if icons look too spaced out */}
           {urlObject.status === 'loading' && <CircularProgress size={24} />}
@@ -69,6 +72,18 @@ const UrlItem = ({ urlObject, onUrlClick }) => {
         primary={primaryText}
         secondary={secondaryTextElements.length > 0 ? <React.Fragment>{secondaryTextElements}</React.Fragment> : null}
       />
+      <ListItemSecondaryAction>
+        <IconButton
+          edge="end"
+          aria-label="delete url"
+          onClick={(event) => {
+            event.stopPropagation(); // Prevent ListItemButton click
+            onDeleteUrl(urlObject.url);
+          }}
+        >
+          <DeleteIcon />
+        </IconButton>
+      </ListItemSecondaryAction>
     </ListItemButton>
   );
 };
