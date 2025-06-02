@@ -33,39 +33,79 @@
 
                 if (typeof localforage === 'undefined') {
                     logDebug('ERROR: localforage is not loaded! Check CDN link or network.');
-                    // Attempt to redirect anyway, or show a more prominent error.
                     setTimeout(function() {
                         logDebug('Executing redirect now (localforage not loaded).');
                         window.location.replace('./index.html');
-                    }, 5000); // Shorter delay if core functionality is missing
-                    return; // Stop further execution
+                    }, 5000);
+                    return;
                 }
 
                 logDebug('Configuring localforage...');
                 try {
                     localforage.config({
                         name: 'UrlViewerPWA',
-                        storeName: 'urls', // This MUST match the storeName in the main app
+                        storeName: 'urls',
                         description: 'Storage for URL data (from share handler)',
                     });
                     logDebug('localforage configured successfully.');
                 } catch (e) {
                     logDebug('Error configuring localforage: ' + e.toString());
-                    // Proceeding, but localforage operations might fail or use defaults
                 }
 
                 const params = new URLSearchParams(window.location.search);
-                logDebug('URL Search Params: ' + params.toString());
+                logDebug('Raw URL Search Params: ' + params.toString());
 
-                const sharedUrl = params.get('url');
+                let sharedUrl = params.get('url');
                 const sharedTitle = params.get('title') || '';
                 const sharedText = params.get('text') || '';
+                let urlSource = 'url_param';
 
-                logDebug('Shared URL: ' + (sharedUrl === null ? 'null' : sharedUrl));
-                logDebug('Shared Title: ' + sharedTitle);
-                logDebug('Shared Text: ' + sharedText);
+                logDebug('Initial parameters:');
+                logDebug('  URL from "url" param: ' + (sharedUrl === null ? 'null' : sharedUrl));
+                logDebug('  Title from "title" param: ' + sharedTitle);
+                logDebug('  Text from "text" param: ' + sharedText);
 
-                // Define redirect function to avoid repetition
+                function isValidHttpUrl(string) {
+                    if (!string) return false; // Ensure string is not null or empty
+                    let url;
+                    try {
+                        url = new URL(string);
+                    } catch (_) {
+                        return false;
+                    }
+                    return url.protocol === "http:" || url.protocol === "https:";
+                }
+
+                if (!sharedUrl || !isValidHttpUrl(sharedUrl)) {
+                    logDebug('URL from "url" param is missing or invalid: "' + sharedUrl + '"');
+                    if (sharedText) {
+                        const urlRegex = /(https?:\/\/[^\s]+)/;
+                        const foundInText = sharedText.match(urlRegex);
+                        if (foundInText && foundInText[0]) {
+                            logDebug('Found a potential URL in "text" param: ' + foundInText[0]);
+                            if (isValidHttpUrl(foundInText[0])) {
+                                sharedUrl = foundInText[0];
+                                urlSource = 'text_param';
+                                logDebug('Using URL from "text" param: ' + sharedUrl);
+                            } else {
+                                logDebug('Potential URL in "text" param is invalid: ' + foundInText[0]);
+                            }
+                        } else {
+                            logDebug('No URL found in "text" param.');
+                        }
+                    } else {
+                        logDebug('"text" param is also empty or null.');
+                    }
+                } else {
+                    logDebug('Using valid URL from "url" param: ' + sharedUrl);
+                }
+
+                if (sharedUrl && isValidHttpUrl(sharedUrl)) {
+                    logDebug('Final determined URL to process: ' + sharedUrl + ' (Source: ' + urlSource + ')');
+                } else {
+                    logDebug('No valid URL found in either "url" or "text" parameters. Current sharedUrl value: "' + sharedUrl + '"');
+                }
+
                 function scheduleRedirect(timeout = 30000, reason = "") {
                     const reasonMsg = reason ? ` (${reason})` : "";
                     logDebug(`Redirecting to ./index.html in ${timeout/1000} seconds${reasonMsg}...`);
@@ -75,8 +115,8 @@
                     }, timeout);
                 }
 
-                if (sharedUrl) {
-                    logDebug('sharedUrl is present. Proceeding to process with localforage.');
+                if (sharedUrl && isValidHttpUrl(sharedUrl)) { // Check validity again before processing
+                    logDebug('Proceeding to process valid shared URL with localforage: ' + sharedUrl);
 
                     localforage.getItem('appUrls').then(function(storedUrls) {
                         logDebug('Data retrieved from localforage for appUrls: ' + JSON.stringify(storedUrls));
@@ -89,14 +129,14 @@
                         logDebug('Current URLs from localforage (before modification): ' + JSON.stringify(urls));
 
                         const newUrlEntry = {
-                            url: sharedUrl,
+                            url: sharedUrl, // This is the validated and possibly extracted URL
                             title: sharedTitle || sharedUrl,
-                            text: sharedText,
+                            text: sharedText, // Original sharedText is preserved for context if needed
                             status: 'unloaded'
                         };
                         logDebug('New URL entry to add: ' + JSON.stringify(newUrlEntry));
 
-                        const existingIndex = urls.findIndex(item => item.url === sharedUrl);
+                        const existingIndex = urls.findIndex(item => item.url === newUrlEntry.url);
                         if (existingIndex > -1) {
                             logDebug('URL already exists at index ' + existingIndex + '. Removing old entry to move to top.');
                             urls.splice(existingIndex, 1);
@@ -104,9 +144,9 @@
                         urls.unshift(newUrlEntry);
                         logDebug('URLs after adding new entry (before saving to localforage): ' + JSON.stringify(urls));
 
-                        return localforage.setItem('appUrls', urls); // Return the promise
+                        return localforage.setItem('appUrls', urls);
                     }).then(function(savedValue) {
-                        logDebug('Successfully saved updated appUrls to localforage. Saved value (potentially truncated by localforage driver): ' + JSON.stringify(savedValue).substring(0, 200) + '...');
+                        logDebug('Successfully saved updated appUrls to localforage. Saved value (sample): ' + JSON.stringify(savedValue).substring(0, 200) + '...');
                         scheduleRedirect(30000, "save successful");
                     }).catch(function(err) {
                         logDebug('Error with localforage operations (getItem or setItem): ' + err.toString());
@@ -115,11 +155,11 @@
                     });
 
                 } else {
-                    logDebug('No sharedUrl parameter found in the URL.');
-                    scheduleRedirect(30000, "no sharedUrl");
+                    logDebug('No valid shared URL to process after checking both "url" and "text" params.');
+                    scheduleRedirect(30000, "no valid sharedUrl found");
                 }
-            })(); // End of IIFE
-        }); // End of DOMContentLoaded listener
+            })();
+        });
     </script>
 </head>
 <body>
