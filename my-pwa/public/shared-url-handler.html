@@ -6,160 +6,239 @@
     <style>
         #debug-log p { margin: 0.2em 0; } /* Basic styling for log messages */
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script> Removed -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            (function() { // IIFE kept for scope isolation
-                function logDebug(message) {
-                    const logContainer = document.getElementById('debug-log');
-                    if (logContainer) {
-                        const p = document.createElement('p');
-                        if (typeof message === 'object' && message !== null) {
-                            try {
-                                p.textContent = JSON.stringify(message);
-                            } catch (e) {
-                                p.textContent = "Error stringifying object for debug log";
-                                console.error("Error stringifying object for debug log:", message, e);
-                            }
-                        } else {
-                            p.textContent = String(message);
-                        }
-                        logContainer.appendChild(p);
+    // --- Start of Embedded IndexedDB Utilities ---
+    const IDB_DB_NAME = 'UrlViewerPWA';
+    const IDB_STORE_NAME = 'urls';
+    const IDB_DB_VERSION = 1;
+
+    function initDBGlobal() { // Renamed to avoid conflict if other scripts use initDB
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(IDB_DB_NAME, IDB_DB_VERSION);
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains(IDB_STORE_NAME)) {
+            db.createObjectStore(IDB_STORE_NAME, { keyPath: 'url' });
+          }
+        };
+        request.onsuccess = (event) => resolve(event.target.result);
+        request.onerror = (event) => {
+          console.error('Database error (shared-handler):', event.target.error);
+          reject(event.target.error);
+        };
+      });
+    }
+
+    async function getAllUrlsGlobal() { // Renamed
+      const db = await initDBGlobal();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction([IDB_STORE_NAME], 'readonly');
+        const store = transaction.objectStore(IDB_STORE_NAME);
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = (event) => {
+          console.error('Error loading URLs from IndexedDB (shared-handler):', event.target.error);
+          reject(event.target.error);
+        };
+      });
+    }
+
+    async function saveUrlsGlobal(urls) { // Renamed
+      if (!Array.isArray(urls)) {
+        return Promise.reject(new TypeError('Expected urls to be an array (shared-handler).'));
+      }
+      const db = await initDBGlobal();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction([IDB_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(IDB_STORE_NAME);
+        const clearRequest = store.clear();
+
+        clearRequest.onerror = (event) => {
+            console.error('Error clearing object store (shared-handler):', event.target.error);
+            transaction.abort();
+            reject(event.target.error);
+            return;
+        };
+
+        clearRequest.onsuccess = () => {
+            if (urls.length === 0) {
+                resolve(); // Resolve if nothing to add after clearing
+                return;
+            }
+            // let putCount = 0; // Not strictly needed if only relying on transaction.oncomplete for success
+            urls.forEach(urlObject => {
+                if (typeof urlObject === 'object' && urlObject !== null && 'url' in urlObject) {
+                    try {
+                        const putRequest = store.put(urlObject);
+                        // putRequest.onsuccess handled by transaction.oncomplete
+                        putRequest.onerror = (event) => {
+                            console.error('Error saving URL to IndexedDB (shared-handler):', urlObject, event.target.error);
+                            transaction.abort(); // Abort on any put error
+                            reject(event.target.error); // Reject the main promise
+                        };
+                    } catch (e) {
+                        console.error('Error calling store.put() (shared-handler):', e, 'for object:', urlObject);
+                        transaction.abort();
+                        reject(e);
                     }
-                    console.log(message);
-                }
-
-                logDebug('DOM fully loaded and parsed. Script started.');
-
-                if (typeof localforage === 'undefined') {
-                    logDebug('ERROR: localforage is not loaded! Check CDN link or network.');
-                    setTimeout(function() {
-                        logDebug('Executing redirect now (localforage not loaded).');
-                        window.location.replace('./index.html');
-                    }, 5000);
+                } else {
+                    console.warn('Skipping invalid URL object during save (shared-handler):', urlObject);
+                    transaction.abort(); // Abort if an invalid object is encountered
+                    reject(new Error('Invalid URL object encountered during save (shared-handler).'));
                     return;
                 }
+            });
+        };
 
-                logDebug('Configuring localforage...');
-                try {
-                    localforage.config({
-                        name: 'UrlViewerPWA',
-                        storeName: 'urls',
-                        description: 'Storage for URL data (from share handler)',
-                    });
-                    logDebug('localforage configured successfully.');
-                } catch (e) {
-                    logDebug('Error configuring localforage: ' + e.toString());
-                }
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (event) => {
+            console.error('Error in save transaction (shared-handler):', event.target.error);
+            reject(event.target.error);
+        };
+        transaction.onabort = (event) => {
+             console.error('Save transaction aborted (shared-handler):', event.target.error);
+             // Ensure rejection if not already rejected
+             reject(event.target.error || new Error("Transaction aborted (shared-handler)"));
+        };
+      });
+    }
+    // --- End of Embedded IndexedDB Utilities ---
 
-                const params = new URLSearchParams(window.location.search);
-                logDebug('Raw URL Search Params: ' + params.toString());
-
-                let sharedUrl = params.get('url');
-                const sharedTitle = params.get('title') || '';
-                const sharedText = params.get('text') || '';
-                let urlSource = 'url_param';
-
-                logDebug('Initial parameters:');
-                logDebug('  URL from "url" param: ' + (sharedUrl === null ? 'null' : sharedUrl));
-                logDebug('  Title from "title" param: ' + sharedTitle);
-                logDebug('  Text from "text" param: ' + sharedText);
-
-                function isValidHttpUrl(string) {
-                    if (!string) return false; // Ensure string is not null or empty
-                    let url;
-                    try {
-                        url = new URL(string);
-                    } catch (_) {
-                        return false;
-                    }
-                    return url.protocol === "http:" || url.protocol === "https:";
-                }
-
-                if (!sharedUrl || !isValidHttpUrl(sharedUrl)) {
-                    logDebug('URL from "url" param is missing or invalid: "' + sharedUrl + '"');
-                    if (sharedText) {
-                        const urlRegex = /(https?:\/\/[^\s]+)/;
-                        const foundInText = sharedText.match(urlRegex);
-                        if (foundInText && foundInText[0]) {
-                            logDebug('Found a potential URL in "text" param: ' + foundInText[0]);
-                            if (isValidHttpUrl(foundInText[0])) {
-                                sharedUrl = foundInText[0];
-                                urlSource = 'text_param';
-                                logDebug('Using URL from "text" param: ' + sharedUrl);
-                            } else {
-                                logDebug('Potential URL in "text" param is invalid: ' + foundInText[0]);
-                            }
-                        } else {
-                            logDebug('No URL found in "text" param.');
+    document.addEventListener('DOMContentLoaded', function() {
+        (function() { // IIFE kept for scope isolation
+            function logDebug(message) {
+                const logContainer = document.getElementById('debug-log');
+                if (logContainer) {
+                    const p = document.createElement('p');
+                    if (typeof message === 'object' && message !== null) {
+                        try {
+                            p.textContent = JSON.stringify(message);
+                        } catch (e) {
+                            p.textContent = "Error stringifying object for debug log";
+                            console.error("Error stringifying object for debug log:", message, e);
                         }
                     } else {
-                        logDebug('"text" param is also empty or null.');
+                        p.textContent = String(message);
+                    }
+                    logContainer.appendChild(p);
+                }
+                console.log(message);
+            }
+
+            logDebug('DOM fully loaded and parsed. Script started (using IndexedDB).');
+
+            // localforage related checks and config removed.
+
+            const params = new URLSearchParams(window.location.search);
+            logDebug('Raw URL Search Params: ' + params.toString());
+
+            let sharedUrl = params.get('url');
+            const sharedTitle = params.get('title') || '';
+            const sharedText = params.get('text') || '';
+            let urlSource = 'url_param';
+
+            logDebug('Initial parameters:');
+            logDebug('  URL from "url" param: ' + (sharedUrl === null ? 'null' : sharedUrl));
+            logDebug('  Title from "title" param: ' + sharedTitle);
+            logDebug('  Text from "text" param: ' + sharedText);
+
+            function isValidHttpUrl(string) {
+                if (!string) return false;
+                let url;
+                try {
+                    url = new URL(string);
+                } catch (_) {
+                    return false;
+                }
+                return url.protocol === "http:" || url.protocol === "https:";
+            }
+
+            if (!sharedUrl || !isValidHttpUrl(sharedUrl)) {
+                logDebug('URL from "url" param is missing or invalid: "' + sharedUrl + '"');
+                if (sharedText) {
+                    const urlRegex = /(https?:\/\/[^\s]+)/;
+                    const foundInText = sharedText.match(urlRegex);
+                    if (foundInText && foundInText[0]) {
+                        logDebug('Found a potential URL in "text" param: ' + foundInText[0]);
+                        if (isValidHttpUrl(foundInText[0])) {
+                            sharedUrl = foundInText[0];
+                            urlSource = 'text_param';
+                            logDebug('Using URL from "text" param: ' + sharedUrl);
+                        } else {
+                            logDebug('Potential URL in "text" param is invalid: ' + foundInText[0]);
+                        }
+                    } else {
+                        logDebug('No URL found in "text" param.');
                     }
                 } else {
-                    logDebug('Using valid URL from "url" param: ' + sharedUrl);
+                    logDebug('"text" param is also empty or null.');
                 }
+            } else {
+                logDebug('Using valid URL from "url" param: ' + sharedUrl);
+            }
 
-                if (sharedUrl && isValidHttpUrl(sharedUrl)) {
-                    logDebug('Final determined URL to process: ' + sharedUrl + ' (Source: ' + urlSource + ')');
-                } else {
-                    logDebug('No valid URL found in either "url" or "text" parameters. Current sharedUrl value: "' + sharedUrl + '"');
-                }
+            if (sharedUrl && isValidHttpUrl(sharedUrl)) {
+                logDebug('Final determined URL to process: ' + sharedUrl + ' (Source: ' + urlSource + ')');
+            } else {
+                logDebug('No valid URL found in either "url" or "text" parameters. Current sharedUrl value: "' + sharedUrl + '"');
+            }
 
-                function scheduleRedirect(timeout = 30000, reason = "") {
-                    const reasonMsg = reason ? ` (${reason})` : "";
-                    logDebug(`Redirecting to ./index.html in ${timeout/1000} seconds${reasonMsg}...`);
-                    setTimeout(function() {
-                        logDebug(`Executing redirect now${reasonMsg}.`);
-                        window.location.replace('./index.html');
-                    }, timeout);
-                }
+            function scheduleRedirect(timeout = 3000, reason = "") { // Default timeout changed for quicker testing
+                const reasonMsg = reason ? ` (${reason})` : "";
+                logDebug(`Redirecting to ./index.html in ${timeout/1000} seconds${reasonMsg}...`);
+                setTimeout(function() {
+                    logDebug(`Executing redirect now${reasonMsg}.`);
+                    window.location.replace('./index.html');
+                }, timeout);
+            }
 
-                if (sharedUrl && isValidHttpUrl(sharedUrl)) { // Check validity again before processing
-                    logDebug('Proceeding to process valid shared URL with localforage: ' + sharedUrl);
+            if (sharedUrl && isValidHttpUrl(sharedUrl)) {
+                logDebug('Proceeding to process valid shared URL with IndexedDB: ' + sharedUrl);
 
-                    localforage.getItem('appUrls').then(function(storedUrls) {
-                        logDebug('Data retrieved from localforage for appUrls: ' + JSON.stringify(storedUrls));
-                        let urls = [];
-                        if (storedUrls && Array.isArray(storedUrls)) {
-                            urls = storedUrls;
-                        } else {
-                            logDebug('No valid array found for appUrls in localforage, starting with empty array.');
-                        }
-                        logDebug('Current URLs from localforage (before modification): ' + JSON.stringify(urls));
+                // Use getAllUrlsGlobal and saveUrlsGlobal
+                getAllUrlsGlobal().then(function(storedUrls) {
+                    logDebug('Data retrieved from IndexedDB for appUrls: ' + JSON.stringify(storedUrls));
+                    let urls = [];
+                    if (storedUrls && Array.isArray(storedUrls)) {
+                        urls = storedUrls;
+                    } else {
+                        logDebug('No valid array found for appUrls in IndexedDB, starting with empty array.');
+                    }
+                    logDebug('Current URLs from IndexedDB (before modification): ' + JSON.stringify(urls));
 
-                        const newUrlEntry = {
-                            url: sharedUrl, // This is the validated and possibly extracted URL
-                            title: sharedTitle || sharedUrl,
-                            text: sharedText, // Original sharedText is preserved for context if needed
-                            status: 'unloaded'
-                        };
-                        logDebug('New URL entry to add: ' + JSON.stringify(newUrlEntry));
+                    const newUrlEntry = {
+                        url: sharedUrl,
+                        title: sharedTitle || sharedUrl,
+                        text: sharedText,
+                        status: 'unloaded'
+                    };
+                    logDebug('New URL entry to add: ' + JSON.stringify(newUrlEntry));
 
-                        const existingIndex = urls.findIndex(item => item.url === newUrlEntry.url);
-                        if (existingIndex > -1) {
-                            logDebug('URL already exists at index ' + existingIndex + '. Removing old entry to move to top.');
-                            urls.splice(existingIndex, 1);
-                        }
-                        urls.unshift(newUrlEntry);
-                        logDebug('URLs after adding new entry (before saving to localforage): ' + JSON.stringify(urls));
+                    const existingIndex = urls.findIndex(item => item.url === newUrlEntry.url);
+                    if (existingIndex > -1) {
+                        logDebug('URL already exists at index ' + existingIndex + '. Removing old entry to move to top.');
+                        urls.splice(existingIndex, 1);
+                    }
+                    urls.unshift(newUrlEntry);
+                    logDebug('URLs after adding new entry (before saving to IndexedDB): ' + JSON.stringify(urls));
 
-                        return localforage.setItem('appUrls', urls);
-                    }).then(function(savedValue) {
-                        logDebug('Successfully saved updated appUrls to localforage. Saved value (sample): ' + JSON.stringify(savedValue).substring(0, 200) + '...');
-                        scheduleRedirect(30000, "save successful");
-                    }).catch(function(err) {
-                        logDebug('Error with localforage operations (getItem or setItem): ' + err.toString());
-                        console.error('Localforage error:', err);
-                        scheduleRedirect(30000, "storage error");
-                    });
+                    return saveUrlsGlobal(urls);
+                }).then(function() { // saveUrlsGlobal resolves with no value on success
+                    logDebug('Successfully saved updated appUrls to IndexedDB.');
+                    scheduleRedirect(3000, "save successful"); // Redirect quickly on success
+                }).catch(function(err) {
+                    logDebug('Error with IndexedDB operations (getAllUrlsGlobal or saveUrlsGlobal): ' + String(err));
+                    console.error('IndexedDB error (shared-handler):', err);
+                    scheduleRedirect(5000, "storage error"); // Keep slightly longer redirect on error
+                });
 
-                } else {
-                    logDebug('No valid shared URL to process after checking both "url" and "text" params.');
-                    scheduleRedirect(30000, "no valid sharedUrl found");
-                }
-            })();
-        });
+            } else {
+                logDebug('No valid shared URL to process after checking both "url" and "text" params.');
+                scheduleRedirect(5000, "no valid sharedUrl found"); // Quicker redirect if no URL
+            }
+        })();
+    });
     </script>
 </head>
 <body>
