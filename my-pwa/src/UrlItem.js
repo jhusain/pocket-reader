@@ -1,4 +1,5 @@
 import React from 'react';
+import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -57,34 +58,35 @@ const UrlItem = ({ urlObject, onUrlClick, onDeleteUrl }) => {
 
 
   return (
-    <ListItemButton component="li" onClick={handleClick} divider>
-      {(urlObject.status === 'loading' || urlObject.status === 'error') && (
-        <ListItemIcon sx={{minWidth: '40px'}}> {/* Adjust minWidth if icons look too spaced out */}
-          {urlObject.status === 'loading' && <CircularProgress size={24} />}
-          {urlObject.status === 'error' && <ErrorOutlineIcon color="error" />}
-        </ListItemIcon>
-      )}
-      {/* If no icon for loading/error, add an empty ListItemIcon to align text if other items have icons */}
-      {/* This can be removed if no items ever have icons other than loading/error */}
-      {/* {urlObject.status !== 'loading' && urlObject.status !== 'error' && <ListItemIcon sx={{minWidth: '40px'}} />} */}
-
-      <ListItemText
-        primary={primaryText}
-        secondary={secondaryTextElements.length > 0 ? <React.Fragment>{secondaryTextElements}</React.Fragment> : null}
-      />
+    <ListItem component="li" divider disableGutters>
+      <ListItemButton onClick={handleClick} sx={{ flexGrow: 1 }}> {/* Allow ListItemButton to take available space */}
+        {(urlObject.status === 'loading' || urlObject.status === 'error') && (
+          <ListItemIcon sx={{minWidth: '40px'}}> {/* Adjust minWidth if icons look too spaced out */}
+            {urlObject.status === 'loading' && <CircularProgress size={24} />}
+            {urlObject.status === 'error' && <ErrorOutlineIcon color="error" />}
+          </ListItemIcon>
+        )}
+        {/* Optional: Add placeholder for alignment if needed, though flexGrow on ListItemButton might handle this better
+        {urlObject.status !== 'loading' && urlObject.status !== 'error' && <ListItemIcon sx={{minWidth: '40px', visibility: 'hidden'}} />} 
+        */}
+        <ListItemText
+          primary={primaryText}
+          secondary={secondaryTextElements.length > 0 ? <React.Fragment>{secondaryTextElements}</React.Fragment> : null}
+        />
+      </ListItemButton>
       <ListItemSecondaryAction>
         <IconButton
           edge="end"
           aria-label="delete url"
           onClick={(event) => {
-            event.stopPropagation(); // Prevent ListItemButton click
+            event.stopPropagation(); // Important if the ListItem itself could have a click listener, though less critical here as the button is outside the ListItemButton's main click area.
             onDeleteUrl(urlObject.url);
           }}
         >
           <DeleteIcon />
         </IconButton>
       </ListItemSecondaryAction>
-    </ListItemButton>
+    </ListItem>
   );
 };
 
