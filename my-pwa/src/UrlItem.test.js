@@ -14,17 +14,17 @@ describe('UrlItem component', () => {
 
   test('renders URL information correctly', () => {
     render(<UrlItem urlObject={mockUrlObject} onUrlClick={jest.fn()} onDeleteUrl={jest.fn()} />);
-    
+
     // Check if title is rendered (since status is 'loaded' and title exists)
     expect(screen.getByText(mockUrlObject.title)).toBeInTheDocument();
     // Check if URL is rendered as secondary text
-    expect(screen.getByText(mockUrlObject.url)).toBeInTheDocument(); 
+    expect(screen.getByText(mockUrlObject.url)).toBeInTheDocument();
   });
 
   test('calls onUrlClick when the item is clicked', () => {
     const mockOnUrlClick = jest.fn();
     render(<UrlItem urlObject={mockUrlObject} onUrlClick={mockOnUrlClick} onDeleteUrl={jest.fn()} />);
-    
+
     // Click the main body of the list item
     // The primary text (title) is a good target if the whole item is clickable
     fireEvent.click(screen.getByText(mockUrlObject.title));
@@ -35,10 +35,10 @@ describe('UrlItem component', () => {
   test('calls onDeleteUrl with the correct URL when delete button is clicked', () => {
     const mockOnDeleteUrl = jest.fn();
     render(<UrlItem urlObject={mockUrlObject} onUrlClick={jest.fn()} onDeleteUrl={mockOnDeleteUrl} />);
-    
+
     const deleteButton = screen.getByRole('button', { name: /delete url/i });
     fireEvent.click(deleteButton);
-    
+
     expect(mockOnDeleteUrl).toHaveBeenCalledTimes(1);
     expect(mockOnDeleteUrl).toHaveBeenCalledWith(mockUrlObject.url);
   });
@@ -47,10 +47,10 @@ describe('UrlItem component', () => {
     const mockOnUrlClick = jest.fn();
     const mockOnDeleteUrl = jest.fn();
     render(<UrlItem urlObject={mockUrlObject} onUrlClick={mockOnUrlClick} onDeleteUrl={mockOnDeleteUrl} />);
-    
+
     const deleteButton = screen.getByRole('button', { name: /delete url/i });
     fireEvent.click(deleteButton);
-    
+
     expect(mockOnDeleteUrl).toHaveBeenCalledTimes(1);
     expect(mockOnUrlClick).not.toHaveBeenCalled();
   });
@@ -65,10 +65,10 @@ describe('UrlItem component', () => {
   });
 
   test('displays error icon and message when status is "error"', () => {
-    const errorUrlObject = { 
-      ...mockUrlObject, 
-      status: 'error', 
-      errorMessage: 'Failed to load', 
+    const errorUrlObject = {
+      ...mockUrlObject,
+      status: 'error',
+      errorMessage: 'Failed to load',
       title: 'Error Page' // Title might exist even if there was an error
     };
     render(<UrlItem urlObject={errorUrlObject} onUrlClick={jest.fn()} onDeleteUrl={jest.fn()} />);

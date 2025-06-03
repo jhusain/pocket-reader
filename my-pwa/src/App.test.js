@@ -60,7 +60,7 @@ describe('App component', () => {
     // The state updates, triggering the useEffect hook that calls saveUrls.
     // The argument to saveUrls should be the list of URLs *after* deletion.
     await waitFor(() => {
-      expect(saveUrls).toHaveBeenCalledTimes(2); 
+      expect(saveUrls).toHaveBeenCalledTimes(2);
 
       // Check the arguments of the LAST call to saveUrls
       expect(saveUrls).toHaveBeenLastCalledWith(
@@ -86,7 +86,7 @@ describe('App component', () => {
     await waitFor(() => {
       expect(screen.getByText(newUrl)).toBeInTheDocument();
     });
-    
+
     // Verify saveUrls was called again after addition
     await waitFor(() => {
         expect(saveUrls).toHaveBeenCalledWith(

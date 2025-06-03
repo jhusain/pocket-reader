@@ -59,10 +59,10 @@ const UrlItem = ({ urlObject, onUrlClick, onDeleteUrl }) => {
 
   return (
     <ListItem component="li" divider disableGutters sx={{ position: 'relative' }}>
-      <ListItemButton 
-        onClick={handleClick} 
+      <ListItemButton
+        onClick={handleClick}
         // sx={{ flexGrow: 1 }} // flexGrow might not be needed if pr is set correctly
-        sx={{ 
+        sx={{
           pr: 9, // Padding right for the secondary action
           // flexGrow: 1, // Optional: see if needed with padding
         }}
@@ -74,7 +74,7 @@ const UrlItem = ({ urlObject, onUrlClick, onDeleteUrl }) => {
           </ListItemIcon>
         )}
         {/* Optional: Add placeholder for alignment if needed, though flexGrow on ListItemButton might handle this better
-        {urlObject.status !== 'loading' && urlObject.status !== 'error' && <ListItemIcon sx={{minWidth: '40px', visibility: 'hidden'}} />} 
+        {urlObject.status !== 'loading' && urlObject.status !== 'error' && <ListItemIcon sx={{minWidth: '40px', visibility: 'hidden'}} />}
         */}
         <ListItemText
           primary={primaryText}
