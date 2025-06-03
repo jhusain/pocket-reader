@@ -78,11 +78,11 @@ function App() {
     setUrls(prevUrls =>
       prevUrls.map(u => (u.url === targetUrl ? { ...u, ...newData } : u))
     );
-  }, [setUrls]);
+  }, []);
 
   const handleDeleteUrl = useCallback((urlToDelete) => {
     setUrls(prevUrls => prevUrls.filter(u => u.url !== urlToDelete));
-  }, [setUrls]);
+  }, []);
 
   const handleUrlClick = useCallback(async (urlObject) => {
     if (urlObject.status === 'loaded' && urlObject.simplifiedHtml) {
@@ -139,7 +139,7 @@ function App() {
         // setCurrentView('content'); // Already in content view
       }
     }
-  }, [updateUrlData, setUrls]); // Added setUrls here just in case, though updateUrlData is the direct dependency
+  }, [updateUrlData]);
 
   const handleBackToList = () => {
     setCurrentView('list');
